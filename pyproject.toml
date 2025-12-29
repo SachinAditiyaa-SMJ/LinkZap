@@ -5,9 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "alembic>=1.17.2",
+    "asyncpg>=0.31.0",
     "fastapi[standard]==0.128.0",
-    "psycopg2==2.9.11",
+    "greenlet>=3.3.0",
+    "loguru>=0.7.3",
+    "psycopg2-binary==2.9.11",
     "redis>=7.1.0",
     "ruff>=0.14.10",
     "sqlalchemy==2.0.45",

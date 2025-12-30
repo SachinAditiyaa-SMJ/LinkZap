@@ -8,7 +8,7 @@ from sqlalchemy import (
     Index,
 )
 
-from app.db import Base
+from app.services.db import Base
 from app.models.mixins import TimestampMixin, CRUDMixin
 
 

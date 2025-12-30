@@ -33,7 +33,7 @@ async def init_db_engine():
         pool_size=10,
         max_overflow=10,
         pool_pre_ping=True,  # Verify connections before using
-        echo=True,
+        echo=False,
     )
 
 

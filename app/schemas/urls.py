@@ -1,4 +1,3 @@
-# app/schemas.py
 from datetime import datetime
 from typing import Optional
 
@@ -31,13 +30,20 @@ class URLResponse(URLBase):
 
     id: int
     short_code: str  # Generated, required in response
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
-        from_attributes = True  # SQLAlchemy compatibility
-
+        from_attributes = True 
 
 class URLRedirectResponse(BaseModel):
     """Minimal response for redirect endpoint"""
 
     short_code: str
     original_url: HttpUrl
+
+
+class URLFilterParams(BaseModel):
+    id: Optional[int] = Field(default=None, ge=0, description="Database primary key of the URL")
+    short_code: Optional[str] = Field(default=None, max_length=10, description="Short code of the URL")
+    is_active: Optional[bool] = Field(default=None, description="Whether the URL is active")

@@ -1,12 +1,14 @@
 from datetime import datetime, timezone
+from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import RedirectResponse
+from loguru import logger
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.urls import URL
-from app.schemas.urls import URLCreate, URLResponse
+from app.schemas.urls import URLCreate, URLResponse, URLUpdate, URLFilterParams
 from app.services import db, redis
 from app.utils.shortcode_generator import generate_shortcode
 
@@ -24,7 +26,7 @@ async def shorten_url(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Custom short codes are not supported.",
         )
-        
+
     # Create a Short code
     shortcode: str = await generate_shortcode(redis_client, "url:counter")
 
@@ -68,4 +70,50 @@ async def redirect_to_original(
                 detail="Short URL has expired.",
             )
 
-    return RedirectResponse(url=url_obj.original_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+    return RedirectResponse(
+        url=url_obj.original_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT
+    )
+
+
+@router.get("/info/", response_model=List[URLResponse])
+async def get_url_info(
+    filter_params: Annotated[URLFilterParams, Query()],
+    db_session: AsyncSession = Depends(db.get_session),
+) -> URLResponse:
+    """
+    Get URL details by short code.
+    """
+
+    url_obj = await URL.filter_all(db_session, **filter_params.model_dump(exclude_unset=True, exclude_none=True))
+
+    if url_obj is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Short URL not found.",
+        )
+
+    return url_obj
+
+
+
+@router.put("/{id}", response_model=URLResponse)
+async def update_url(
+    id: int,
+    url_update: URLUpdate,
+    db_session: AsyncSession = Depends(db.get_session),
+) -> URLResponse:
+    """
+    Update URL details by id.
+    """
+    updates = url_update.model_dump(exclude_unset=True)
+
+    # Convert HttpUrl to string if original_url is being updated
+    if "original_url" in updates:
+        updates["original_url"] = str(updates["original_url"])
+
+    # Update the URL
+    updated_url = await URL.update(db_session, id, updates)
+
+    return updated_url
+
+
